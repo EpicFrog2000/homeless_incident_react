@@ -2,44 +2,57 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import db_operations
 
 class Oferta:
-    link = None
+    link = ""
     
-    lokacja = None
-    cena = None
-    cena_m2 = None
+    lokacja = ""
+    cena = ""
+    cena_m2 = ""
     
     # Może?
-    szacowana_rata_kredytu = None
-    wklad_wlasny = None
-    okres_splaty = None
-        
+    szacowana_rata_kredytu = ""
+    wklad_wlasny = ""
+    okres_splaty = ""
+    
+    # HOSTORIC:
+    #   powieszchnia - srednia
+    #                - przedzialy   
+    #   cena m2      - 
+    #
+    #
+    #
+    #   top 30 lokacji
+    #   cena m2
+    #   powieszchnia
+    #   czynsz
+    
     # Szczegóły ogłoszenia
-    powierzchnia = None
-    liczba_pokoi = None
-    pietro = None
-    czynsz = None
-    forma_wlasności = None
-    stan_wykonczenia = None
-    balkon_ogrod_taras = None
-    miejsce_parkingowe = None
-    ogrzewanie = None
-    certyfikat_energetyczny = None
+    powierzchnia = ""
+    liczba_pokoi = ""
+    pietro = ""
+    czynsz = ""
+    forma_wlasnosci = ""
+    stan_wykonczenia = ""
+    balkon_ogrod_taras = ""
+    miejsce_parkingowe = ""
+    ogrzewanie = ""
+    certyfikat_energetyczny = ""
     
     # Informacje dodatkowe
-    rynek = None
-    typ_ogloszeniodawcy = None
-    dostępne_od = None
-    rok_budowy = None
-    rodzaj_zabudowy = None
-    okna = None
-    winda = None
-    media = None
-    zabezpieczenia = None
-    wyposazenie = None
-    informacje_dodatkowe = None
-    material_budynku = None
+    rynek = ""
+    typ_ogloszeniodawcy = ""
+    dostepne_od = ""
+    rok_budowy = ""
+    rodzaj_zabudowy = ""
+    okna = ""
+    winda = ""
+    media = ""
+    zabezpieczenia = ""
+    wyposazenie = ""
+    informacje_dodatkowe = ""
+    material_budynku = ""
 
 class Bot:
     def __init__(self):
@@ -72,7 +85,7 @@ class Bot:
         self.bot.get(url)
         self.bot.maximize_window()
         
-        self.bot.sites_count = None
+        self.bot.sites_count = ""
         self.bot.linki_do_ofert = []
     
     def accept_cookies(self):
@@ -84,6 +97,7 @@ class Bot:
             pass
     
     def get_num_of_sites(self):
+        #self.bot.sites_count = 2
         try:
             ul = self.bot.find_element(By.CSS_SELECTOR,'ul[data-testid="frontend.search.base-pagination.nexus-pagination"].css-1vdlgt7')
             li_elements = ul.find_elements(By.TAG_NAME, 'li')
@@ -135,14 +149,16 @@ class Bot:
             #cena
             try:
                 Cena_div = self.bot.find_element(By.CSS_SELECTOR, 'strong[data-cy="adPageHeaderPrice"][aria-label="Cena"]')
-                oferta.cena = Cena_div.get_attribute("innerHTML").split("z")[0].strip()
+                oferta.cena = Cena_div.get_attribute("innerHTML").split("z")[0].strip().replace(" ", "")
             except:
+                oferta.cena = 0
                 pass
             #cena_m2
             try:
                 element = self.bot.find_element(By.CSS_SELECTOR, 'div[aria-label="Cena za metr kwadratowy"].css-1h1l5lm.efcnut39').text
-                inner_text = element.split("z")[0].strip()
+                oferta.cena_m2 = element.split("z")[0].strip().replace(" ", "")
             except:
+                oferta.cena_m2 = 0
                 pass
             
             
@@ -153,24 +169,26 @@ class Bot:
                 div = szczeguly_div.find_element(By.CSS_SELECTOR, 'div[aria-label="Powierzchnia"][role="region"].css-1ivc1bc.enb64yk1')
                 element = div.find_element(By.CSS_SELECTOR, 'div.css-1wi2w6s.enb64yk5')
                 text = element.get_attribute("innerHTML")
-                oferta.powierzchnia = text.split()[0].strip()
+                oferta.powierzchnia = text.split()[0].strip().replace(" ", "").replace(",", ".")
             except:
                 pass
-            #forma_wlasności
+            #forma_wlasnosci
             try:
                 div = szczeguly_div.find_element(By.CSS_SELECTOR, 'div[aria-label="Forma własności"][role="region"].css-1ivc1bc.enb64yk1')
                 element = div.find_element(By.CSS_SELECTOR, 'div.css-1wi2w6s.enb64yk5')
                 text = element.get_attribute("innerHTML")
-                oferta.forma_wlasności = text.split()[0].strip()
+                oferta.forma_wlasnosci = text.split()[0].strip()
             except:
                 pass
             #liczba_pokoi
             try:
                 div = szczeguly_div.find_element(By.CSS_SELECTOR, 'div[aria-label="Liczba pokoi"][role="region"].css-1ivc1bc.enb64yk1')
                 element = div.find_element(By.CSS_SELECTOR, 'div.css-1wi2w6s.enb64yk5')
-                text = element.get_attribute("innerHTML")
-                oferta.liczba_pokoi = text
-            except:
+                text = element.find_element(By.CSS_SELECTOR, '[data-cy="ad-information-link"]').text
+                text = text.split("z")[0]
+                oferta.liczba_pokoi = text.replace(" ", "")
+            except :
+                oferta.liczba_pokoi = 0
                 pass
             #stan_wykonczenia
             try:
@@ -201,7 +219,7 @@ class Bot:
                 div = szczeguly_div.find_element(By.CSS_SELECTOR, 'div[aria-label="Czynsz"][role="region"].css-1ivc1bc.enb64yk1')
                 element = div.find_element(By.CSS_SELECTOR, 'div.css-1wi2w6s.enb64yk5')
                 text = element.get_attribute("innerHTML")
-                oferta.czynsz = text
+                oferta.czynsz = text.split("z")[0].replace(" ", "")
             except:
                 pass
             #miejsce_parkingowe
@@ -244,10 +262,10 @@ class Bot:
                 oferta.typ_ogloszeniodawcy = element.strip()
             except:
                 pass
-            #dostępne_od
+            #dostepne_od
             try:
                 element = inf_dodatkowe_div.find_element(By.CSS_SELECTOR, 'div[data-testid="table-value-free_from"].css-1wi2w6s.enb64yk5').text
-                oferta.dostępne_od = element.strip()
+                oferta.dostepne_od = element.strip()
             except:
                 pass
             #rok_budowy 
@@ -304,17 +322,14 @@ class Bot:
                 oferta.material_budynku = element.strip()
             except:
                 pass
-            
-            input(oferta.material_budynku)
-             
+                         
             #TODO: fix formating in some variables in oferta
             # Here insert to database
-            
-            
-            
-            
-           
-
+            try:
+                db_operations.insert_data(oferta)
+            except Exception as e:
+                print("Error in insert_data: ", e)
+                pass
 
 if __name__ == "__main__":
     bot = Bot()
@@ -326,4 +341,4 @@ if __name__ == "__main__":
     
     bot.get_data_from_links_to_offers()
     
-    input("xd")
+    input("end of program")
